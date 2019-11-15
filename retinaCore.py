@@ -1,5 +1,9 @@
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import os
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Activation, Dropout, Flatten, Dense
+from keras.layers.convolutional import SeparableConv2D
 
 
 os.environ['KMP_WARNINGS'] = '0'
@@ -43,4 +47,32 @@ for batch in datagen.flow(imgArray, batch_size=32, save_to_dir=path, save_prefix
 	if i > 20:
 		break
 
+model = Sequential()
+model.add(SeparableConv2D(32, (3, 3), padding = 'same', input_shape = shape))
+model.add(Activation('relu'))		
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+model.add(SeparableConv2D(64, (3, 3), padding = 'same'))
+model.add(Activation('relu'))		
+model.add(SeparableConv2D(64, (3, 3), padding = 'same'))
+model.add(Activation('relu'))		
+model.add(MaxPooling2D(pool_size = (2, 2)))
+model.add(Dropout(0.25))
+model.add(SeparableConv2D(128, (3, 3), padding = 'same'))
+model.add(Activation('relu'))
+model.add(SeparableConv2D(128, (3, 3), padding = 'same'))
+model.add(Activation('relu'))
+model.add(SeparableConv2D(128, (3, 3), padding = 'same'))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size = (2, 2)))
+model.add(Dropout(0.25))
 
+model.add(Flatten())
+model.add(Dense(256))
+model.add(Activation('relu'))
+model.add(BatchNormalization())
+model.add(Dropout(0.5))
+model.add(Activation('softmax'))
+
+opt=Adagrad(lr=INIT_LR, decay=INIT_LR/NUM_EPOCHS)
+model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
