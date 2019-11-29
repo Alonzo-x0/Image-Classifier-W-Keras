@@ -4,10 +4,17 @@ from keras.models import Sequential
 from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
+from imutils import paths
 
 
 os.environ['KMP_WARNINGS'] = '0'
 #disable above if you need to see tensorflow start logs
+
+
+
+
+#creates and organizes paths
+lenTest=len(list(paths.list_images('data/test')))
 
 datagen = ImageDataGenerator(
 	rotation_range=180, 
@@ -38,7 +45,6 @@ if os.path.exists(path) == False:
 else:
 	print(f'{path} already exists')
 
-#arImage = array_to_img(imgArray)
 
 i = 0
 for batch in datagen.flow(imgArray, batch_size=1, save_to_dir=path, save_prefix='cats', save_format='jpeg'):
@@ -91,19 +97,30 @@ train_Datagen = ImageDataGenerator(
 	zoom_range=0.2,
 	horizontal_flip=True)
 
-test_Datagen = ImageDataGenerator(rescale=1/255)
+valAug = ImageDataGenerator(rescale=1/255)
 
 train_generator = train_Datagen.flow_from_directory(
 	'data/train',
 	target_size=(150, 150),
+	color_mode='rgb',
+	shuffle=False,
 	batch_size=batch_size,
 	class_mode='binary')
 
 validation_generator = test_Datagen.flow_from_directory(
 	'data/validation',
 	target_size=(150, 150),
+	color_mode='rgb',
+	shuffle=False,
 	batch_size=batch_size,
 	class_mode='binary')
+
+test_generator = valAug.flow_from_directory(
+	'data/test',
+	target_size=(48, 48),
+	color_mode='rgb',
+	shuffle=False,
+	batch_size=BS)
 
 model.fit_generator(
 	train_generator,
@@ -111,6 +128,14 @@ model.fit_generator(
 	epochs=50,
 	validation_data=validation_generator,
 	validation_steps=800//batch_size)
+
+predIndices = model.predict_generator(test_generator, steps=((lenTest//batch_size)+1))
+
+predIndices = np.argmax(predIndices, axis=1)
+
+print(classification_report(test_generator.classes, predIndices, target_names=test_generator.class_indices.keys()))
+
+
 
 model.save_weights('first_try.h5')
 
