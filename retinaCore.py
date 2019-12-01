@@ -6,9 +6,12 @@ from sklearn.metrics import confusion_matrix, classification_report
 from keras.models import Sequential
 from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D, Activation, Dropout, Flatten, Dense
 from keras import backend as K
-import numpy as np
-#from imutils import paths
+import matplotlib.pyplot as plt
 
+import numpy as np
+from keras.callbacks import History
+#from imutils import paths
+history = History()
 
 os.environ['KMP_WARNINGS'] = '0'
 #disable above if you need to see tensorflow start logs
@@ -126,9 +129,9 @@ test_generator = valAug.flow_from_directory(
 	batch_size=batch_size)
 
 
-model.fit_generator(
+M = model.fit_generator(
 	train_generator,
-	steps_per_epoch=1,#2000//batch_size,
+	steps_per_epoch=125,#2000//batch_size,
 	epochs=50,
 	validation_data=validation_generator,
 	validation_steps=800//batch_size)
@@ -136,10 +139,6 @@ model.fit_generator(
 predIndices = model.predict_generator(test_generator, steps=125)#((2000//batch_size)+1))
 
 predIndices = np.argmax(predIndices, axis=1)
-print(len(test_generator.classes))
-print(len(predIndices))
-print(len(test_generator.class_indices))
-print(len(test_generator.class_indices))
 
 print(classification_report(test_generator.classes, predIndices, target_names=test_generator.class_indices.keys()))
 
@@ -153,6 +152,23 @@ print(cm)
 print(f'Accuracy: {accuracy}')
 print(f'Specificity: {specificity}')
 print(f'Sensitvity: {sensitvity}')
+
+
+print(M.history.keys())
+
+
+plt.style.use('ggplot')
+plt.figure()
+plt.plot(np.arange(0, 50), M.history['loss'], label='train_loss')
+#plt.plot(np.arange(0, 50), M.history['val_loss'], label='val_loss')
+plt.plot(np.arange(0, 50), M.history['accuracy'], label='train_acc')
+#plt.plot(np.arange(0, 50), M.history['val_acc'], label='val_acc')
+
+plt.title('Training loss and accuracy on the provided dataset')
+plt.xlabel('Epoch No.')
+plt.ylabel('Loss/Accuracy')
+plt.legend(loc='lower left')
+plt.savefig('plot2.png')
 
 model.save_weights('first_try.h5')
 
