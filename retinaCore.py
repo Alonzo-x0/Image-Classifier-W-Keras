@@ -1,10 +1,13 @@
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+
+from sklearn.metrics import confusion_matrix, classification_report
 from keras.models import Sequential
-from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D
-from keras.layers import Activation, Dropout, Flatten, Dense
+from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D, Activation, Dropout, Flatten, Dense
 from keras import backend as K
-from imutils import paths
+import numpy as np
+#from imutils import paths
 
 
 os.environ['KMP_WARNINGS'] = '0'
@@ -14,7 +17,7 @@ os.environ['KMP_WARNINGS'] = '0'
 
 
 #creates and organizes paths
-lenTest=len(list(paths.list_images('data/test')))
+#lenTest=len(list(paths.list_images('data/test')))
 
 datagen = ImageDataGenerator(
 	rotation_range=180, 
@@ -32,7 +35,7 @@ img = load_img('data/train/cats/cat.1.jpg')
 
 imgArray = img_to_array(img)
 imgArray = imgArray.reshape((1,) + imgArray.shape)
-#print(imgArray.shape)
+print(imgArray.shape)
 
 path = 'imgPreview'
 if os.path.exists(path) == False:
@@ -107,7 +110,7 @@ train_generator = train_Datagen.flow_from_directory(
 	batch_size=batch_size,
 	class_mode='binary')
 
-validation_generator = test_Datagen.flow_from_directory(
+validation_generator = valAug.flow_from_directory(
 	'data/validation',
 	target_size=(150, 150),
 	color_mode='rgb',
@@ -117,25 +120,39 @@ validation_generator = test_Datagen.flow_from_directory(
 
 test_generator = valAug.flow_from_directory(
 	'data/test',
-	target_size=(48, 48),
+	target_size=(150, 150),
 	color_mode='rgb',
 	shuffle=False,
-	batch_size=BS)
+	batch_size=batch_size)
+
 
 model.fit_generator(
 	train_generator,
-	steps_per_epoch=2000//batch_size,
+	steps_per_epoch=1,#2000//batch_size,
 	epochs=50,
 	validation_data=validation_generator,
 	validation_steps=800//batch_size)
 
-predIndices = model.predict_generator(test_generator, steps=((lenTest//batch_size)+1))
+predIndices = model.predict_generator(test_generator, steps=125)#((2000//batch_size)+1))
 
 predIndices = np.argmax(predIndices, axis=1)
+print(len(test_generator.classes))
+print(len(predIndices))
+print(len(test_generator.class_indices))
+print(len(test_generator.class_indices))
 
 print(classification_report(test_generator.classes, predIndices, target_names=test_generator.class_indices.keys()))
 
+cm = confusion_matrix(test_generator.classes, predIndices)
 
+total=sum(sum(cm))
+accuracy=(cm[0, 0]+cm[1, 1])/total
+specificity=cm[1, 1]/(cm[1, 0]+cm[1, 1])
+sensitvity=cm[0, 0]/(cm[0, 0]+cm[0, 1])
+print(cm)
+print(f'Accuracy: {accuracy}')
+print(f'Specificity: {specificity}')
+print(f'Sensitvity: {sensitvity}')
 
 model.save_weights('first_try.h5')
 
