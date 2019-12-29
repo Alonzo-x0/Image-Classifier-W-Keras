@@ -1,8 +1,8 @@
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
-
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.models import Sequential
 from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D, Activation, Dropout, Flatten, Dense
 from keras import backend as K
@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 from keras.callbacks import History
-#from imutils import paths
 history = History()
 
 os.environ['KMP_WARNINGS'] = '0'
@@ -34,11 +33,11 @@ datagen = ImageDataGenerator(
 	#validation_split=0.2, 
 	fill_mode='nearest')
 
-img = load_img('data/train/cats/cat.1.jpg')
+img = load_img('data/train/dogs/dog.1.jpg')
 
 imgArray = img_to_array(img)
 imgArray = imgArray.reshape((1,) + imgArray.shape)
-print(imgArray.shape)
+#print(imgArray.shape)
 
 path = 'imgPreview'
 if os.path.exists(path) == False:
@@ -53,7 +52,7 @@ else:
 
 
 i = 0
-for batch in datagen.flow(imgArray, batch_size=1, save_to_dir=path, save_prefix='cats', save_format='jpeg'):
+for batch in datagen.flow(imgArray, batch_size=1, save_to_dir=path, save_prefix='dogs', save_format='jpeg'):
 	i += 1
 
 	if i > 20:
@@ -94,6 +93,7 @@ model.add(Activation('sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
+nEpochSteps = 125
 
 batch_size = 16
 
@@ -131,38 +131,41 @@ test_generator = valAug.flow_from_directory(
 
 M = model.fit_generator(
 	train_generator,
-	steps_per_epoch=125,#2000//batch_size,
+	steps_per_epoch=nEpochSteps,#2000//batch_size,
 	epochs=50,
 	validation_data=validation_generator,
 	validation_steps=800//batch_size)
 
-predIndices = model.predict_generator(test_generator, steps=125)#((2000//batch_size)+1))
+predIndices = model.predict_generator(test_generator, steps=nEpochSteps)#((2000//batch_size)+1))
 
-predIndices = np.argmax(predIndices, axis=1)
-
-print(classification_report(test_generator.classes, predIndices, target_names=test_generator.class_indices.keys()))
-
-cm = confusion_matrix(test_generator.classes, predIndices)
-
-total=sum(sum(cm))
-accuracy=(cm[0, 0]+cm[1, 1])/total
-specificity=cm[1, 1]/(cm[1, 0]+cm[1, 1])
-sensitvity=cm[0, 0]/(cm[0, 0]+cm[0, 1])
-print(cm)
-print(f'Accuracy: {accuracy}')
-print(f'Specificity: {specificity}')
-print(f'Sensitvity: {sensitvity}')
+a=test_generator.classes.tolist()
+b = predIndices.tolist()
 
 
-print(M.history.keys())
+y = []
+a = [float(i) for i in a]
+
+
+for n in b:
+	for k in n:
+		y.append(k)
+
+z = []
+for floats in y:
+	z.append(round(floats))
+y = z
+
+print(confusion_matrix(a, y))
+print(classification_report(a, y,))# target_names=test_generator.class_indices.keys()))
+
+
+
 
 
 plt.style.use('ggplot')
 plt.figure()
 plt.plot(np.arange(0, 50), M.history['loss'], label='train_loss')
-#plt.plot(np.arange(0, 50), M.history['val_loss'], label='val_loss')
 plt.plot(np.arange(0, 50), M.history['accuracy'], label='train_acc')
-#plt.plot(np.arange(0, 50), M.history['val_acc'], label='val_acc')
 
 plt.title('Training loss and accuracy on the provided dataset')
 plt.xlabel('Epoch No.')
@@ -170,10 +173,6 @@ plt.ylabel('Loss/Accuracy')
 plt.legend(loc='lower left')
 plt.savefig('plot2.png')
 
+
 model.save_weights('first_try.h5')
-
-
-
-
-
 
