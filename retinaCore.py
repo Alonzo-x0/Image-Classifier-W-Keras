@@ -1,13 +1,25 @@
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.models import Sequential
-from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D
-from keras.layers import Activation, Dropout, Flatten, Dense
+from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D, Activation, Dropout, Flatten, Dense
 from keras import backend as K
+import matplotlib.pyplot as plt
 
+import numpy as np
+from keras.callbacks import History
+history = History()
 
 os.environ['KMP_WARNINGS'] = '0'
 #disable above if you need to see tensorflow start logs
+
+
+
+
+#creates and organizes paths
+#lenTest=len(list(paths.list_images('data/test')))
 
 datagen = ImageDataGenerator(
 	rotation_range=180, 
@@ -21,10 +33,11 @@ datagen = ImageDataGenerator(
 	#validation_split=0.2, 
 	fill_mode='nearest')
 
-img = load_img('data/test/cats/cat.4001.jpg')
+img = load_img('data/train/dogs/dog.1.jpg')
 
 imgArray = img_to_array(img)
-
+imgArray = imgArray.reshape((1,) + imgArray.shape)
+#print(imgArray.shape)
 
 path = 'imgPreview'
 if os.path.exists(path) == False:
@@ -37,11 +50,9 @@ if os.path.exists(path) == False:
 else:
 	print(f'{path} already exists')
 
-#arImage = array_to_img(imgArray)
 
-imgArray = imgArray.reshape((1,) + imgArray.shape)
 i = 0
-for batch in datagen.flow(imgArray, batch_size=32, save_to_dir=path, save_prefix='cats', save_format='jpeg'):
+for batch in datagen.flow(imgArray, batch_size=1, save_to_dir=path, save_prefix='dogs', save_format='jpeg'):
 	i += 1
 
 	if i > 20:
@@ -78,10 +89,11 @@ model.add(Activation('relu'))
 model.add(Dropout(0.25))
 model.add(Dense(1))
 
-model.add(Activation('sigmoid')) 
+model.add(Activation('sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
+nEpochSteps = 125
 
 batch_size = 16
 
@@ -91,31 +103,75 @@ train_Datagen = ImageDataGenerator(
 	zoom_range=0.2,
 	horizontal_flip=True)
 
-test_Datagen = ImageDataGenerator(rescale=1/255)
+valAug = ImageDataGenerator(rescale=1/255)
 
 train_generator = train_Datagen.flow_from_directory(
 	'data/train',
 	target_size=(150, 150),
+	color_mode='rgb',
+	shuffle=False,
 	batch_size=batch_size,
 	class_mode='binary')
 
-validation_generator = test_Datagen.flow_from_directory(
+validation_generator = valAug.flow_from_directory(
 	'data/validation',
 	target_size=(150, 150),
+	color_mode='rgb',
+	shuffle=False,
 	batch_size=batch_size,
 	class_mode='binary')
-model.load_weights('first_try.h5')
-model.fit_generator(
+
+test_generator = valAug.flow_from_directory(
+	'data/test',
+	target_size=(150, 150),
+	color_mode='rgb',
+	shuffle=False,
+	batch_size=batch_size)
+
+
+M = model.fit_generator(
 	train_generator,
-	steps_per_epoch=2000//batch_size,
+	steps_per_epoch=nEpochSteps,#2000//batch_size,
 	epochs=50,
 	validation_data=validation_generator,
 	validation_steps=800//batch_size)
 
+predIndices = model.predict_generator(test_generator, steps=nEpochSteps)#((2000//batch_size)+1))
+
+a=test_generator.classes.tolist()
+b = predIndices.tolist()
+
+
+y = []
+a = [float(i) for i in a]
+
+
+for n in b:
+	for k in n:
+		y.append(k)
+
+z = []
+for floats in y:
+	z.append(round(floats))
+y = z
+
+print(confusion_matrix(a, y))
+print(classification_report(a, y,))# target_names=test_generator.class_indices.keys()))
+
+
+
+
+
+plt.style.use('ggplot')
+plt.figure()
+plt.plot(np.arange(0, 50), M.history['loss'], label='train_loss')
+plt.plot(np.arange(0, 50), M.history['accuracy'], label='train_acc')
+
+plt.title('Training loss and accuracy on the provided dataset')
+plt.xlabel('Epoch No.')
+plt.ylabel('Loss/Accuracy')
+plt.legend(loc='lower left')
+plt.savefig('plot2.png')
+
+
 model.save_weights('first_try.h5')
-
-
-
-
-
-
