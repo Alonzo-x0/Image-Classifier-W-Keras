@@ -1,62 +1,53 @@
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+import numpy as np
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.models import Sequential
 from keras.layers import SeparableConv2D, BatchNormalization, MaxPooling2D, Activation, Dropout, Flatten, Dense
 from keras import backend as K
 import matplotlib.pyplot as plt
-
-import numpy as np
 from keras.callbacks import History
 history = History()
 
 os.environ['KMP_WARNINGS'] = '0'
 #disable above if you need to see tensorflow start logs
-
+#def filePrep():
+	#fileLoc = input('Paste a file location to be compared to dogs and cats\nEmpty for default: ')
+	#if os.path.exists(fileLoc) == False:
+		#print('File location does not exist or field was empty, using default dog picture')
+		#fileLoc = 'data/train/dogs/dog.1.jpg'
+	#return fileLoc
 
 
 
 #creates and organizes paths
 #lenTest=len(list(paths.list_images('data/test')))
 
-datagen = ImageDataGenerator(
-	rotation_range=180, 
-	width_shift_range=0.2, 
-	height_shift_range=0.2, 
-	shear_range=0.2,
-	#rescale = 1/255, 
-	zoom_range=0.2, 
-	horizontal_flip=True, 
-	vertical_flip=True, 
-	#validation_split=0.2, 
-	fill_mode='nearest')
-
-img = load_img('data/train/dogs/dog.1.jpg')
-
-imgArray = img_to_array(img)
-imgArray = imgArray.reshape((1,) + imgArray.shape)
-#print(imgArray.shape)
-
-path = 'imgPreview'
-if os.path.exists(path) == False:
-	print(f'{path} does not exist')
-	try:
-		os.mkdir(path)
-		print(f'{path} has been made')
-	except OSError:
-		print(f'Directory {path} could not be made')
-else:
-	print(f'{path} already exists')
 
 
-i = 0
-for batch in datagen.flow(imgArray, batch_size=1, save_to_dir=path, save_prefix='dogs', save_format='jpeg'):
-	i += 1
-
-	if i > 20:
-		break
+#def imgHandling(image):
+	#datagen = ImageDataGenerator(
+	#rotation_range=180, 
+	#width_shift_range=0.2, 
+	#height_shift_range=0.2, 
+	#shear_range=0.2,
+	##rescale = 1/255, 
+	#zoom_range=0.2, 
+	#horizontal_flip=True, 
+	#vertical_flip=True, 
+	##validation_split=0.2, 
+	#fill_mode='nearest')
+#
+	#imgArray = img_to_array(load_img(image))
+	#imgArray = imgArray.reshape((1,) + imgArray.shape)
+	#print('Image manipulation has been completed')
+#
+#
+#imgHandling(filePrep())
+#quit()
 
 model = Sequential()
 
