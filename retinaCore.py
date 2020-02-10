@@ -14,40 +14,7 @@ history = History()
 
 os.environ['KMP_WARNINGS'] = '0'
 #disable above if you need to see tensorflow start logs
-#def filePrep():
-	#fileLoc = input('Paste a file location to be compared to dogs and cats\nEmpty for default: ')
-	#if os.path.exists(fileLoc) == False:
-		#print('File location does not exist or field was empty, using default dog picture')
-		#fileLoc = 'data/train/dogs/dog.1.jpg'
-	#return fileLoc
 
-
-
-#creates and organizes paths
-#lenTest=len(list(paths.list_images('data/test')))
-
-
-
-#def imgHandling(image):
-	#datagen = ImageDataGenerator(
-	#rotation_range=180, 
-	#width_shift_range=0.2, 
-	#height_shift_range=0.2, 
-	#shear_range=0.2,
-	##rescale = 1/255, 
-	#zoom_range=0.2, 
-	#horizontal_flip=True, 
-	#vertical_flip=True, 
-	##validation_split=0.2, 
-	#fill_mode='nearest')
-#
-	#imgArray = img_to_array(load_img(image))
-	#imgArray = imgArray.reshape((1,) + imgArray.shape)
-	#print('Image manipulation has been completed')
-#
-#
-#imgHandling(filePrep())
-#quit()
 
 model = Sequential()
 
